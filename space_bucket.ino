@@ -7,7 +7,7 @@
   #define DHTPIN 2     // Digital Pin for DHT22
   #define DHTTYPE DHT22   // DHT 22  (AM2302)
   DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
-
+  
   // Photocell
   const float VCC = 4.98; // Measured voltage of Ardunio 5V line
   const float R_DIV = 4610.0; // Measured resistance of 4.7k resistor
