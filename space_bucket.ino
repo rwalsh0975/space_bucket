@@ -1,24 +1,20 @@
-  //Libraries 
-  #include <Adafruit_Sensor.h>
-  #include <DHT.h>
-  
-  //Constants
-  //DHT 22
-  #define DHTPIN 2     // Digital Pin for DHT22
-  #define DHTTYPE DHT22   // DHT 22  (AM2302)
-  DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
+//Libraries 
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <ArduinoJson.h>
 
-  // Photocell
-  const float VCC = 4.98; // Measured voltage of Ardunio 5V line
-  const float R_DIV = 4610.0; // Measured resistance of 4.7k resistor
-  
-  // Analog INPUT pins
-  const int SOIL_SIG = A0; // Pin connected to SIG of Soil Moisture Sensor
-  const int LIGHT_SIG = A1; // Pin connected to voltage divider output
-  
-  // Digital INPUT pins
-  // Digital OUTPUT pins
-  const int SOIL_POWER = 3;
+//Constants
+//DHT 22
+#define DHTPIN 2     // Digital Pin for DHT22
+#define DHTTYPE DHT22   // DHT 22  (AM2302)
+DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
+const size_t humidityBufferSize = JSON_OBJECT_SIZE(3);
+const size_t temperatureBufferSize = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3);
+const size_t soilBufferSize = JSON_OBJECT_SIZE(3);
+const size_t lightBufferSize = 2*JSON_OBJECT_SIZE(3);
+long Timer = 0;
+long INTERVAL_SECONDS = 5;
+long interval = INTERVAL_SECONDS * 1000;
 
 // JSON Buffers
 DynamicJsonBuffer temperatureBuffer(temperatureBufferSize);
@@ -73,7 +69,7 @@ SensorData sensorData;
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
+  Serial.begin(115200);
   dht.begin();
 
   // Input Signals
@@ -93,43 +89,39 @@ void setup() {
 }
 
 void loop() {
-   if(!Serial) {  //check if Serial is available... if not,
-    Serial.end();      // close serial port
-    delay(100);        //wait 100 millis
-    Serial.begin(9600); // reenable serial again
-  }
-
-  sensorData.tempHumid = readTempAndHumidity();
-  // Humidity
-  humidityRoot["time"] = 0;
-  humidityRoot["value"] = sensorData.tempHumid.humidity;
-  humidityRoot.printTo(Serial);
-  Serial.println();
-
-  //Temperature
-  temperatureRoot["time"] = 0;
-  temperatureValue["fahrenheit"] = sensorData.tempHumid.tempFahrenheit;
-  temperatureValue["celcius"] = sensorData.tempHumid.tempCelcius;
-  temperatureRoot.printTo(Serial);
-  Serial.println();
-
-  // Soil Sensor
-  sensorData.soilMoisture = readSoilSensor();
-  soilRoot["time"] = 0;
-  soilRoot["value"] =  sensorData.soilMoisture;
-  soilRoot.printTo(Serial);
-  Serial.println();
-
-  // Photocell
-  sensorData.light = readPhotocell();
-  lightRoot["time"] = 0;
-  lightValue["light"] = sensorData.light.lightADC;
-  lightValue["voltage"] = sensorData.light.voltage;
-  lightValue["resistance"] = sensorData.light.resistance;
-  lightRoot.printTo(Serial);
-  Serial.println();
+  unsigned long current = millis();
+  if (current - Timer > interval) {
+    Timer = current - 1;
+    sensorData.tempHumid = readTempAndHumidity();
+    // Humidity
+    humidityRoot["time"] = 0;
+    humidityRoot["value"] = sensorData.tempHumid.humidity;
+    humidityRoot.printTo(Serial);
+    Serial.println();
   
-  delay(10000); // Delay 10 seconds
+    //Temperature
+    temperatureRoot["time"] = 0;
+    temperatureValue["fahrenheit"] = sensorData.tempHumid.tempFahrenheit;
+    temperatureValue["celcius"] = sensorData.tempHumid.tempCelcius;
+    temperatureRoot.printTo(Serial);
+    Serial.println();
+  
+    // Soil Sensor
+    sensorData.soilMoisture = readSoilSensor();
+    soilRoot["time"] = 0;
+    soilRoot["value"] =  sensorData.soilMoisture;
+    soilRoot.printTo(Serial);
+    Serial.println();
+  
+    // Photocell
+    sensorData.light = readPhotocell();
+    lightRoot["time"] = 0;
+    lightValue["light"] = sensorData.light.lightADC;
+    lightValue["voltage"] = sensorData.light.voltage;
+    lightValue["resistance"] = sensorData.light.resistance;
+    lightRoot.printTo(Serial);
+    Serial.println();
+  }
 }
 
 TemperatureHumidityReadings readTempAndHumidity() {
@@ -160,19 +152,3 @@ int readSoilSensor() {
   digitalWrite(SOIL_POWER, LOW);   // Turn sensor OFF
   return moisture;
 }
-
-
-// Libraries
-#include <Adafruit_Sensor.h>
-#include <DHT.h>
-#include <ArduinoJson.h>
-
-// Constants
-// DHT22
-#define DHTPIN 2     // Digital Pin for DHT22
-#define DHTTYPE DHT22   // DHT 22  (AM2302)
-DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
-const size_t humidityBufferSize = JSON_OBJECT_SIZE(3);
-const size_t temperatureBufferSize = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3);
-const size_t soilBufferSize = JSON_OBJECT_SIZE(3);
-const size_t lightBufferSize = 2*JSON_OBJECT_SIZE(3);
