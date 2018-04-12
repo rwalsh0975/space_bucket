@@ -55,8 +55,8 @@ struct TemperatureHumidityReadings {
 };
 struct PhotocellReadings {
   int lightADC;
-  float voltage;
-  float resistance;
+  String voltage;
+  String resistance;
 };
 struct SensorData {
   TemperatureHumidityReadings tempHumid;
@@ -140,7 +140,7 @@ PhotocellReadings readPhotocell() {
   {
     // Use the ADC reading to calculate voltage and resistance
     val.voltage = val.lightADC * VCC / 1023.0;
-    val.resistance = R_DIV * (VCC / val.voltage - 1.0);
+    val.resistance = R_DIV * (VCC / val.voltage.toFloat() - 1.0);
   }
   return val;
 }
